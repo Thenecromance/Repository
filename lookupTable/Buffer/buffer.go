@@ -5,8 +5,6 @@ import (
 	"sync/atomic"
 )
 
-type obj = any
-
 type Buffer struct {
 	noLock bool
 	lock   sync.RWMutex
@@ -32,9 +30,8 @@ func (b *Buffer) Append(data ...obj) {
 	}
 
 	if b.restCount() < len(data) { //means there is no enough space to store the data
-		copy(b.buf[b.size.Load():], data[:b.restCount()-1]) // so just fill the buffer with the rest space
+		copy(b.buf[b.size.Load():], data[:b.restCount()]) // so just fill the buffer with the rest space
 		b.markBufferIsFull()
-		return
 	} else {
 		copy(b.buf[b.size.Load():], data)
 		b.size.Add(int64(len(data)))
@@ -56,13 +53,12 @@ func (b *Buffer) markBufferIsFull() {
 	b.size.Store(int64(b.limit))
 }
 func (b *Buffer) Clear() {
-	b.buf = b.buf[:0] // if i directly set b.size to 0, it means the buffer is empty, but the data is still in the buffer
+	//b.buf = b.buf[:0] // if directly set b.size to 0, it means the buffer is empty, but the data is still in the buffer
 	b.size.Store(0)
 }
 
 func (b *Buffer) swap(other *Buffer) {
 	*b, *other = *other, *b //now other is need to be cleared
-	//b.buf, other.buf = other.buf, b.buf
 }
 
 func (b *Buffer) restCount() int {
@@ -83,6 +79,10 @@ func (b *Buffer) Get() []obj {
 	length := b.size.Load()
 	b.size.Store(0)
 	return b.buf[:length]
+}
+
+func (b *Buffer) Size() int {
+	return b.limit
 }
 
 func NewBuffer(bufSize int) *Buffer {

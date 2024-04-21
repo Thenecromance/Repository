@@ -7,8 +7,15 @@ const (
 	custom
 )
 
+const (
+	InFirst = iota
+	OutputFirst
+	Balance
+)
+
 type FullPolicy = int
 type Policy struct {
 	// this policy control the behavior when the buffer is full and how to handle the new data
 	NewDataWhenFull FullPolicy
+	IOPriority      int
 }

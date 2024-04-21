@@ -2,7 +2,6 @@ package Buffer
 
 import (
 	"sync"
-	"time"
 )
 
 const (
@@ -19,19 +18,15 @@ func (d *DoubleBuffer) Append(data ...obj) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	if uint32(d.buf[current].restCount()) == 0 {
+	// if current buffer is full, swap to use backup buffer
+	if d.buf[current].restCount() == 0 {
 		d.buf[current].swap(&d.buf[backup]) // means current buffer is full ,swap to use backup buffer
 	}
 
-	//when the both buffer is full , temp raise a panic to avoid the data loss, so far I don't have any good idea to handle this situation
-
-	for d.buf[current].restCount() == 0 && d.buf[backup].restCount() == 0 {
-		d.lock.Unlock() //temp release the lock to avoid the deadlock
-		time.Sleep(10 * time.Microsecond)
-	}
-	d.lock.Lock()
-
 	if d.buf[current].restCount() < len(data) {
+		//so if the current buffer only has 10 space , but the data has 20, then the first 10 will be filled in the current buffer
+		//and the rest 10 will be filled in the backup buffer
+		//then swap the buffer to use the backup buffer
 		cnt := d.buf[current].restCount()
 		d.buf[current].Append(data[:cnt]...) // first fill the current buffer, then swap it
 		d.buf[backup].Append(data[cnt:]...)  // then fill the backup buffer
@@ -60,13 +55,17 @@ func (d *DoubleBuffer) Empty() bool {
 	return d.CachedSize() == 0
 }
 
+func (d *DoubleBuffer) Full() bool {
+	return d.buf[current].restCount() == 0
+
+}
 func (d *DoubleBuffer) Get() (data []obj) {
 	if d.Empty() {
 		return []obj{}
 	}
 
-	d.lock.Lock()
-	defer d.lock.Unlock()
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 
 	// pre allocate the memory
 	data = make([]obj, d.CachedSize())

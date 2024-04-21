@@ -26,9 +26,14 @@ func (b *Buffer) Append(data ...obj) {
 		defer b.lock.Unlock()
 	}
 
-	if b.restCount() < len(data) {
-		copy(b.buf[b.size.Load():], data[:b.restCount()])
-		b.size.Store(int64(b.limit))
+	// if the buffer is full, just ignore the new data
+	if b.Full() {
+		return
+	}
+
+	if b.restCount() < len(data) { //means there is no enough space to store the data
+		copy(b.buf[b.size.Load():], data[:b.restCount()-1]) // so just fill the buffer with the rest space
+		b.markBufferIsFull()
 		return
 	} else {
 		copy(b.buf[b.size.Load():], data)
@@ -37,6 +42,19 @@ func (b *Buffer) Append(data ...obj) {
 
 }
 
+func (b *Buffer) Empty() bool {
+	return b.size.Load() == 0
+}
+func (b *Buffer) HasData() bool {
+	return !b.Empty()
+}
+func (b *Buffer) Full() bool {
+	return b.size.Load() == int64(b.limit)
+}
+
+func (b *Buffer) markBufferIsFull() {
+	b.size.Store(int64(b.limit))
+}
 func (b *Buffer) Clear() {
 	b.buf = b.buf[:0] // if i directly set b.size to 0, it means the buffer is empty, but the data is still in the buffer
 	b.size.Store(0)

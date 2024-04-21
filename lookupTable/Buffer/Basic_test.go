@@ -1,6 +1,24 @@
 package Buffer
 
+import "testing"
+
 const testSize = 100000
+const overSized = testSize + testSize/2
+
+func createSlice() []interface{} {
+	slice := make([]interface{}, 0, testSize)
+	for i := 0; i < testSize; i++ {
+		slice = append(slice, i)
+	}
+	return slice
+}
+func createOverSizedSlice() []interface{} {
+	slice := make([]interface{}, 0, overSized)
+	for i := 0; i < overSized; i++ {
+		slice = append(slice, i)
+	}
+	return slice
+}
 
 //
 //func swapByReset(src, dst []int) {
@@ -146,3 +164,37 @@ const testSize = 100000
 //	b.StopTimer()
 //
 //}
+
+func BenchmarkSlice_AppendSingle(b *testing.B) {
+	src := make([]int, 0, testSize)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		src = append(src, i)
+	}
+	b.StopTimer()
+
+}
+
+func BenchmarkSlice_AppendGroup(b *testing.B) {
+	src := make([]obj, 0, testSize)
+	a := createSlice()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		src = append(src, a...)
+		src = src[:0]
+	}
+	b.StopTimer()
+}
+func BenchmarkSlice_AppendGroup_OverSized(b *testing.B) {
+	src := make([]obj, 0, testSize)
+	demo := createOverSizedSlice()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		src = append(src, demo...)
+		src = src[:0]
+	}
+	b.StopTimer()
+
+}

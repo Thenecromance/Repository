@@ -56,7 +56,7 @@ func (d *DoubleBuffer) Empty() bool {
 }
 
 func (d *DoubleBuffer) Full() bool {
-	return d.buf[current].restCount() == 0
+	return d.buf[current].restCount() == 0 && d.buf[backup].restCount() == 0
 
 }
 func (d *DoubleBuffer) Get() (data []obj) {

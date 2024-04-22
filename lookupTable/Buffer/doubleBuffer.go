@@ -20,6 +20,7 @@ type DoubleBuffer struct {
 func (d *DoubleBuffer) Append(data ...obj) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
+	sync.Map{}
 
 	// if current buffer is full, swap to use backup buffer
 	if d.buf[current].Full() {

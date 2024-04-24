@@ -8,8 +8,10 @@ import (
 
 // Shelf is the directory's abstraction
 type Shelf struct {
-	name  string
-	locks []sync.RWMutex // locks group can change to use lru cache to manage the locks also it can limit the number of locks
+	dir      string
+	name     string
+	fullPath string
+	locks    []sync.RWMutex // locks group can change to use lru cache to manage the locks also it can limit the number of locks
 
 	quit        chan struct{}
 	newItems    chan item
@@ -33,7 +35,7 @@ func (s *Shelf) NewItems(filename string, content []byte) {
 }
 
 func (s *Shelf) GetItems(name string) []byte {
-	file, err := os.Open(s.name + "/" + name)
+	file, err := os.Open(s.fullPath + "/" + name)
 	if err != nil {
 		return nil
 	}
@@ -57,7 +59,7 @@ func (s *Shelf) DeleteItems(name string) {
 
 func (s *Shelf) storeItem(item *item) {
 	//log.Print(s.name + "/" + item.file)
-	file, err := os.Create(s.name + "/" + item.file)
+	file, err := os.Create(s.fullPath + "/" + item.file)
 	if err != nil {
 		panic(err)
 	}
@@ -91,7 +93,7 @@ func (s *Shelf) run() {
 }
 
 func (s *Shelf) createDirectory() {
-	err := os.Mkdir(s.name, os.ModePerm)
+	err := os.Mkdir(s.fullPath, os.ModePerm)
 	if err != nil {
 		return
 	}
@@ -99,7 +101,9 @@ func (s *Shelf) createDirectory() {
 
 func New(root, id string) *Shelf {
 	s := &Shelf{
-		name:        root + "/" + id,
+		dir:         root,
+		name:        id,
+		fullPath:    root + "/" + id,
 		quit:        make(chan struct{}, 1),
 		newItems:    make(chan item),
 		deleteItems: make(chan string),

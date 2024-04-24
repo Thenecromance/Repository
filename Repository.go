@@ -3,8 +3,6 @@ package Repository
 import (
 	"Repository/shelf"
 	"fmt"
-	"log"
-
 	"os"
 	"strconv"
 	"sync"
@@ -22,10 +20,12 @@ type Repository struct {
 	dirLen        int
 	rootDir       string
 
-	hash           *Hash
-	shelves        map[string]*shelf.Shelf
-	objPool        sync.Pool
+	hash    *Hash
+	shelves map[string]*shelf.Shelf
+	objPool sync.Pool
+
 	preProcessChan chan *object
+	releaseObjChan chan *object
 
 	quit chan struct{}
 }
@@ -34,7 +34,9 @@ func (r *Repository) ShelfCount() int {
 	return 1<<(r.dirLen*4) - 1
 }
 
+// StoreFile is the method to store the file to the repository
 func (r *Repository) StoreFile(fileName string, fileContent []byte) {
+
 	obj := r.objPool.Get().(*object) // 1 alloc
 
 	obj.ptr = newDescriptor(fileName) //1 alloc
@@ -62,7 +64,7 @@ func (r *Repository) GetFile(fileName string) Content {
 }
 
 // create the shelves
-func (r *Repository) createShelves() {
+func (r *Repository) initShelves() {
 	if r.dirLen < 1 {
 		panic("dirLen must be greater than 0")
 	}
@@ -91,6 +93,8 @@ func (r *Repository) preProcess(obj *object) {
 	r.resourceTable.Store(obj.ptr.FileName, obj.ptr.ContentHash)
 	// then distribute the file to the shelf
 	r.shelves[obj.ptr.GetDirectory(r.dirLen)].NewItems(obj.ptr.GetStoreName(r.dirLen), obj.content)
+
+	//r.releaseObjChan <- obj
 }
 
 func (r *Repository) run() {
@@ -99,6 +103,10 @@ func (r *Repository) run() {
 		case obj := <-r.preProcessChan:
 			{
 				r.preProcess(obj)
+			}
+		case obj := <-r.releaseObjChan:
+			{
+				r.objPool.Put(obj)
 			}
 		case <-r.quit:
 			return
@@ -121,12 +129,13 @@ func New(opts ...Option) *Repository {
 		dirLen:                                                   2,
 		rootDir:                                                  "./resources",
 		quit:                                                     make(chan struct{}, 1),
+		preProcessChan:                                           make(chan *object, 1000),
+		releaseObjChan:                                           make(chan *object, 1000),
 		objPool: sync.Pool{
 			New: func() any {
 				return &object{}
 			},
 		},
-		preProcessChan: make(chan *object, 1000),
 	}
 
 	for _, opt := range opts {
@@ -139,13 +148,9 @@ func New(opts ...Option) *Repository {
 	}
 
 	//create dir
-	err := os.Mkdir(obj.rootDir, os.ModePerm)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
+	_ = os.Mkdir(obj.rootDir, os.ModePerm)
 
-	obj.createShelves()
+	obj.initShelves()
 
 	for i := 0; i < 100; i++ {
 		go obj.run()

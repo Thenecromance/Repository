@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Repository/lookupTable/Buffer"
+	"Repository/Buffer"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"

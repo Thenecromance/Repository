@@ -1,4 +1,4 @@
-package lookupTable
+package Map
 
 import (
 	"sync"
@@ -7,7 +7,6 @@ import (
 
 func BenchmarkSyncMap_Store(b *testing.B) {
 	var m sync.Map
-
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {

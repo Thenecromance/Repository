@@ -17,15 +17,20 @@ type DoubleBuffer struct {
 	buf           [2]*Buffer // here could be merged into a single buffer, just make it simple
 }
 
+func (d *DoubleBuffer) Size() int {
+	return d.buf[current].Size() + d.buf[backup].Size()
+}
+
 func (d *DoubleBuffer) Append(data ...obj) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	sync.Map{}
 
 	// if current buffer is full, swap to use backup buffer
 	if d.buf[current].Full() {
 		d.swap()
 	}
+
+	sync.Map
 
 	if d.buf[current].restCount()+d.buf[backup].restCount() < len(data) {
 		// if both buffer can't store the data, then just ignore the data

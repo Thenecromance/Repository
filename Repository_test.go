@@ -4,7 +4,6 @@ import (
 	"Repository/test/random"
 	"log"
 	"math/rand"
-
 	"testing"
 )
 
@@ -24,6 +23,7 @@ var (
 
 func init() {
 	raw = make([]fileObj, 0, count)
+	log.Printf("Start to generate random %d files\n", count)
 	for i := 0; i < count; i++ {
 		raw = append(raw, fileObj{name: random.RandomName(), content: random.Content()})
 	}
@@ -51,3 +51,13 @@ func BenchmarkRepository_StoreAsync(b *testing.B) {
 	})
 	b.StopTimer()
 }
+
+//func BenchmarkRepository_Get(b *testing.B) {
+//	b.ResetTimer()
+//	for i := 0; i < b.N; i++ {
+//		if repo.GetFile(raw[i%count].name) == nil {
+//			//log.Println("GetFile failed")
+//		}
+//	}
+//	b.StopTimer()
+//}

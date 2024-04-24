@@ -40,8 +40,10 @@ func (r *Repository) StoreFile(fileName string, fileContent []byte) (token strin
 	info := newDescriptor(fileName) //1 alloc
 
 	obj := r.objPool.Get().(*object) // 1 alloc
+	// /*&object{}*/
 	obj.ptr = info
 	obj.content = fileContent
+
 	//
 	go func() {
 		select {
@@ -52,9 +54,14 @@ func (r *Repository) StoreFile(fileName string, fileContent []byte) (token strin
 }
 
 // GetFile is the method to get the file from the repository
-func (r *Repository) GetFile(token string) (fileName string, fileContent Content) {
-
-	return "", nil
+func (r *Repository) GetFile(fileName string) Content {
+	hash, ok := r.ResourceTable.Load(fileName)
+	if !ok {
+		return nil
+	}
+	f := newDescriptor(fileName)
+	f.ContentHash = hash.(string)
+	return r.shelves[f.GetId(r.DirLength)].GetItems(f.GetStoreName(r.DirLength))
 }
 
 func (r *Repository) loadShelves() {
@@ -75,8 +82,8 @@ func (r *Repository) preProcess(obj *object) {
 	defer r.objPool.Put(obj)                      //release the object
 	obj.ptr.ContentHash = r.hash.Sum(obj.content) // maybe 1 alloc?
 
-	//r.ResourceTable[obj.ptr.Uid] = obj.ptr
-	r.ResourceTable.Store(obj.ptr.Uid, obj.ptr)
+	//r.ResourceTable.Store(obj.ptr.Uid, obj.ptr)
+	r.ResourceTable.Store(obj.ptr.FileName, obj.ptr.ContentHash)
 	// then distribute the file to the shelf
 	r.shelves[obj.ptr.GetId(r.DirLength)].NewItems(obj.ptr.GetStoreName(r.DirLength), obj.content)
 }
@@ -96,8 +103,6 @@ func (r *Repository) run() {
 
 func (r *Repository) Close() {
 	r.quit <- struct{}{}
-	defer close(r.preProcessChan)
-	defer close(r.quit)
 
 	for _, s := range r.shelves {
 		s.Close()

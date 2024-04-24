@@ -28,6 +28,20 @@ func (s *Shelf) NewItems(filename string, content []byte) {
 	}
 }
 
+func (s *Shelf) GetItems(name string) []byte {
+	file, err := os.Open(s.name + "/" + name)
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+	reader := bufio.NewReader(file)
+	content, err := reader.ReadBytes('\n')
+	if err != nil {
+		return nil
+	}
+	return content
+}
+
 func (s *Shelf) UpdateItems(oldName, newName string, content []byte) {
 	// todo: this methods need to communicate with other storage's methods
 

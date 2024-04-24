@@ -21,6 +21,10 @@ type item struct {
 	content []byte
 }
 
+func (s *Shelf) GetName() string {
+	return s.name
+}
+
 func (s *Shelf) NewItems(filename string, content []byte) {
 	s.newItems <- item{ // 1 alloc
 		file:    filename,

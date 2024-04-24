@@ -28,12 +28,12 @@ func (fd *fileDescriptor) GetStoreName(_len int) string {
 func (fd *fileDescriptor) GetFullPath(dir string, len_ int) string {
 	var builder strings.Builder
 	{
-		builder.Grow(len(dir) + 2 + 64)
-		builder.WriteString(dir)
-		builder.WriteByte('/')
-		builder.WriteString(fd.GetDirectory(len_))
-		builder.WriteByte('/')
-		builder.WriteString(fd.GetStoreName(len_))
+		builder.Grow(len(dir) + 2 + 64) // 2 is for the '/' and 64 is for the hash size in hex
+		_, _ = builder.WriteString(dir)
+		_, _ = builder.WriteString("/")
+		_, _ = builder.WriteString(fd.GetDirectory(len_))
+		_, _ = builder.WriteString("/")
+		_, _ = builder.WriteString(fd.GetStoreName(len_))
 	}
 	return builder.String()
 	//return dir + "/" + fd.GetDirectory(len_) + "/" + fd.GetStoreName(len_)

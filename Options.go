@@ -16,12 +16,12 @@ func WithAlgorithm(algId int) Option {
 
 func WithDirLength(length int) Option {
 	return func(r *Repository) {
-		r.DirLength = length
+		r.dirLen = length
 	}
 }
 
 func WithResourceDir(dir string) Option {
 	return func(r *Repository) {
-		r.ResourceDir = dir
+		r.rootDir = dir
 	}
 }

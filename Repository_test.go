@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"testing"
+	"time"
 )
 
 const (
@@ -33,7 +34,6 @@ func init() {
 }
 
 func BenchmarkRepository_StoreFile(b *testing.B) {
-
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		repo.StoreFile(raw[i%count].name, raw[i%count].content)
@@ -50,6 +50,8 @@ func BenchmarkRepository_StoreAsync(b *testing.B) {
 		}
 	})
 	b.StopTimer()
+
+	time.Sleep(10 * time.Second)
 }
 
 //func BenchmarkRepository_Get(b *testing.B) {

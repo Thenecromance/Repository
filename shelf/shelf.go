@@ -20,14 +20,14 @@ type Shelf struct {
 
 type item struct {
 	file    string
-	content []byte
+	content *[]byte
 }
 
 func (s *Shelf) GetName() string {
 	return s.name
 }
 
-func (s *Shelf) NewItems(filename string, content []byte) {
+func (s *Shelf) NewItems(filename string, content *[]byte) {
 	s.newItems <- item{ // 1 alloc
 		file:    filename,
 		content: content,
@@ -35,17 +35,25 @@ func (s *Shelf) NewItems(filename string, content []byte) {
 }
 
 func (s *Shelf) GetItems(name string) []byte {
-	file, err := os.Open(s.fullPath + "/" + name)
+
+	bytes, err := os.ReadFile(s.fullPath + "/" + name)
 	if err != nil {
 		return nil
 	}
-	defer file.Close()
-	reader := bufio.NewReader(file)
-	content, err := reader.ReadBytes('\n')
-	if err != nil {
-		return nil
-	}
-	return content
+	return bytes
+
+	//file, err := os.Open(s.fullPath + "/" + name)
+	//if err != nil {
+	//	return nil
+	//}
+	//defer file.Close()
+	//reader := bufio.NewReader(file)
+	//content, err := reader.ReadBytes('\n')
+	//if err != nil {
+	//	return nil
+	//}
+	//return content
+
 }
 
 func (s *Shelf) UpdateItems(oldName, newName string, content []byte) {
@@ -64,9 +72,9 @@ func (s *Shelf) storeItem(item *item) {
 		panic(err)
 	}
 	defer file.Close()
-	bufio.NewWriterSize(file, len(item.content))
+	bufio.NewWriterSize(file, len(*item.content))
 
-	_, err = file.Write(item.content)
+	_, err = file.Write(*item.content)
 	if err != nil {
 		panic(err)
 	}

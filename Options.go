@@ -25,3 +25,7 @@ func WithResourceDir(dir string) Option {
 		r.rootDir = dir
 	}
 }
+
+//func test() {
+//	data, err := syscall.Mmap( /*int(f.Fd())*/ 0, 0 /*int(size)*/, 0, syscall.PROT_READ, syscall.MAP_SHARED)
+//}

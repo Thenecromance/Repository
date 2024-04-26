@@ -13,14 +13,19 @@ const (
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
+const (
+	fileNameLength    = 10
+	fileContentLength = 1000000
+)
+
 var src = rand.NewSource(time.Now().UnixNano())
 
 func RandomName() string {
-	return RandStringBytesMaskImprSrcUnsafe(rand.Intn(50))
+	return RandStringBytesMaskImprSrcUnsafe(rand.Intn(fileNameLength))
 }
 
 func Content() []byte {
-	return RandStringBytesMaskImprSrc(rand.Intn(1000000))
+	return RandStringBytesMaskImprSrc(rand.Intn(fileContentLength))
 }
 
 func RandStringBytesMaskImprSrcUnsafe(n int) string {

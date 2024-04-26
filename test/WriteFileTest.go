@@ -35,7 +35,6 @@ func main() {
 
 	count := 10
 	raw := make([]test, 0, count)
-
 	r := Repository.New(
 
 		Repository.WithAlgorithm(Repository.SHA256),
@@ -54,7 +53,7 @@ func main() {
 	{
 		now := time.Now()
 		for i := 0; i < count; i++ {
-			r.StoreFile(raw[i].name, raw[i].content)
+			r.StoreFile(raw[i].name, &raw[i].content)
 		}
 
 		fmt.Printf("Async sender write %d file cost : %s\n", count, time.Since(now).String())

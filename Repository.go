@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-type Content = []byte
+type Content = *[]byte
 
 type object struct {
 	ptr     *fileDescriptor
@@ -35,7 +35,7 @@ func (r *Repository) ShelfCount() int {
 }
 
 // StoreFile is the method to store the file to the repository
-func (r *Repository) StoreFile(fileName string, fileContent []byte) {
+func (r *Repository) StoreFile(fileName string, fileContent *[]byte) {
 
 	obj := r.objPool.Get().(*object) // 1 alloc
 
@@ -57,10 +57,12 @@ func (r *Repository) GetFile(fileName string) Content {
 	if !ok {
 		return nil
 	}
-	f := newDescriptor(fileName)
-	f.ContentHash = hash.(string)
+
+	str := hash.(string)
+
 	//return r.shelves[f.GetId(r.dirLen)].GetItems(f.GetStoreName(r.dirLen))
-	return r.shelves[f.GetDirectory(r.dirLen)].GetItems(f.GetStoreName(r.dirLen))
+	buffer := r.shelves[str[0:r.dirLen]].GetItems(str[r.dirLen:])
+	return &buffer
 }
 
 // create the shelves
@@ -83,6 +85,9 @@ func (r *Repository) initShelves() {
 	}
 }
 
+func (r *Repository) storeInShelf(shelfId, Name string, content Content) {
+	r.shelves[shelfId].NewItems(Name, content)
+}
 func (r *Repository) preProcess(obj *object) {
 	defer func(ptr *object) {
 		ptr.content = nil  // release the content
@@ -91,11 +96,12 @@ func (r *Repository) preProcess(obj *object) {
 	}(obj)
 
 	// calculate hash of the content
-	obj.ptr.ContentHash = r.hash.Sum(obj.content) // maybe 1 alloc?
+	r.hash.Sum(obj.content, &obj.ptr.ContentHash) // maybe 1 alloc?
 
+	// store the files' info into the resource table,for delete/modify/search only
 	r.resourceTable.Store(obj.ptr.FileName, obj.ptr.ContentHash)
 	// then distribute the file to the shelf
-	r.shelves[obj.ptr.GetDirectory(r.dirLen)].NewItems(obj.ptr.GetStoreName(r.dirLen), obj.content)
+	r.storeInShelf(obj.ptr.GetDirectory(r.dirLen), obj.ptr.GetStoreName(r.dirLen), obj.content)
 }
 
 func (r *Repository) run() {
@@ -126,12 +132,12 @@ func (r *Repository) Close() {
 
 func New(opts ...Option) *Repository {
 	obj := &Repository{
-		resourceTable:/*make(map[string]*fileDescriptor, 1024)*/ sync.Map{},
-		dirLen:         2,
-		rootDir:        "./resources",
-		quit:           make(chan struct{}, 1),
-		preProcessChan: make(chan *object, 1000),
-		releaseObjChan: make(chan *object, 1000),
+		resourceTable: /*make(map[string]*fileDescriptor, 1024)*/ sync.Map{},
+		dirLen:                                                   2,
+		rootDir:                                                  "./resources",
+		quit:                                                     make(chan struct{}, 1),
+		preProcessChan:                                           make(chan *object, 1000),
+		releaseObjChan:                                           make(chan *object, 1000),
 		objPool: sync.Pool{
 			New: func() any {
 				return &object{}

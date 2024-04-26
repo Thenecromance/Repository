@@ -13,9 +13,8 @@ type Shelf struct {
 	fullPath string
 	locks    []sync.RWMutex // locks group can change to use lru cache to manage the locks also it can limit the number of locks
 
-	quit        chan struct{}
-	newItems    chan item
-	deleteItems chan string // just passed the file name to delete
+	quit     chan struct{}
+	newItems chan item
 }
 
 type item struct {
@@ -62,7 +61,7 @@ func (s *Shelf) UpdateItems(oldName, newName string, content []byte) {
 }
 
 func (s *Shelf) DeleteItems(name string) {
-	s.deleteItems <- name
+
 }
 
 func (s *Shelf) storeItem(item *item) {
@@ -95,7 +94,7 @@ func (s *Shelf) run() {
 			}
 		case item := <-s.newItems: // store the file
 			s.storeItem(&item)
-		case <-s.deleteItems: // delete the file
+
 		}
 	}
 }
@@ -109,12 +108,11 @@ func (s *Shelf) createDirectory() {
 
 func New(root, id string) *Shelf {
 	s := &Shelf{
-		dir:         root,
-		name:        id,
-		fullPath:    root + "/" + id,
-		quit:        make(chan struct{}, 1),
-		newItems:    make(chan item),
-		deleteItems: make(chan string),
+		dir:      root,
+		name:     id,
+		fullPath: root + "/" + id,
+		quit:     make(chan struct{}, 1),
+		newItems: make(chan item),
 	}
 	s.createDirectory()
 	go s.run()

@@ -78,14 +78,17 @@ func (r *Repository) initShelves() {
 		//	shelf.New(r.rootDir, fmt.Sprintf("%0"+strconv.Itoa(r.dirLen)+"x", id)),
 		//)
 		shf := shelf.New(r.rootDir, fmt.Sprintf("%0"+strconv.Itoa(r.dirLen)+"x", id))
-
 		r.shelves[shf.GetName()] = shf
 
 	}
 }
 
 func (r *Repository) preProcess(obj *object) {
-	defer r.objPool.Put(obj) //release the object
+	defer func(ptr *object) {
+		ptr.content = nil  // release the content
+		ptr.ptr = nil      // release the pointer
+		r.objPool.Put(ptr) //release the object
+	}(obj)
 
 	// calculate hash of the content
 	obj.ptr.ContentHash = r.hash.Sum(obj.content) // maybe 1 alloc?
@@ -93,8 +96,6 @@ func (r *Repository) preProcess(obj *object) {
 	r.resourceTable.Store(obj.ptr.FileName, obj.ptr.ContentHash)
 	// then distribute the file to the shelf
 	r.shelves[obj.ptr.GetDirectory(r.dirLen)].NewItems(obj.ptr.GetStoreName(r.dirLen), obj.content)
-
-	//r.releaseObjChan <- obj
 }
 
 func (r *Repository) run() {
@@ -125,12 +126,12 @@ func (r *Repository) Close() {
 
 func New(opts ...Option) *Repository {
 	obj := &Repository{
-		resourceTable: /*make(map[string]*fileDescriptor, 1024)*/ sync.Map{},
-		dirLen:                                                   2,
-		rootDir:                                                  "./resources",
-		quit:                                                     make(chan struct{}, 1),
-		preProcessChan:                                           make(chan *object, 1000),
-		releaseObjChan:                                           make(chan *object, 1000),
+		resourceTable:/*make(map[string]*fileDescriptor, 1024)*/ sync.Map{},
+		dirLen:         2,
+		rootDir:        "./resources",
+		quit:           make(chan struct{}, 1),
+		preProcessChan: make(chan *object, 1000),
+		releaseObjChan: make(chan *object, 1000),
 		objPool: sync.Pool{
 			New: func() any {
 				return &object{}

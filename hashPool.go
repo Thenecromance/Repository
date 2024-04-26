@@ -3,6 +3,7 @@ package Repository
 import (
 	"encoding/hex"
 	"hash"
+	"log"
 	"sync"
 )
 
@@ -27,7 +28,10 @@ func (h *Hash) Sum(content Content) string {
 	defer obj.Reset()
 	defer h.pool.Put(obj)
 
-	obj.Write(content)
+	_, err := obj.Write(content)
+	if err != nil {
+		log.Println(err)
+	}
 	obj.buffer = obj.Sum(nil)
 	return hex.EncodeToString(obj.buffer)
 }

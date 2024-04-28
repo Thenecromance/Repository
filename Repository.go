@@ -132,12 +132,12 @@ func (r *Repository) Close() {
 
 func New(opts ...Option) *Repository {
 	obj := &Repository{
-		resourceTable: /*make(map[string]*fileDescriptor, 1024)*/ sync.Map{},
-		dirLen:                                                   2,
-		rootDir:                                                  "./resources",
-		quit:                                                     make(chan struct{}, 1),
-		preProcessChan:                                           make(chan *object, 1000),
-		releaseObjChan:                                           make(chan *object, 1000),
+		resourceTable:/*make(map[string]*fileDescriptor, 1024)*/ sync.Map{},
+		dirLen:         2,
+		rootDir:        "./resources",
+		quit:           make(chan struct{}, 1),
+		preProcessChan: make(chan *object, 1000),
+		releaseObjChan: make(chan *object, 1000),
 		objPool: sync.Pool{
 			New: func() any {
 				return &object{}

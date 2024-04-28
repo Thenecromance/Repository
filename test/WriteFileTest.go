@@ -2,6 +2,7 @@ package main
 
 import (
 	"Repository"
+	"Repository/shelf/mmap"
 	"Repository/test/random"
 	"crypto/sha1"
 	"encoding/hex"
@@ -28,8 +29,7 @@ func storeFileSync(raw []test) {
 		os.WriteFile(fmt.Sprintf("./resources/%s/%s", hashed[:2], hashed[2:]), obj.content, 0644)
 	}
 }
-
-func main() {
+func RepoTest() {
 
 	//int to string
 
@@ -75,4 +75,23 @@ func main() {
 	//}
 	time.Sleep(10 * time.Second)
 	r.Close()
+}
+
+func mmapTest() {
+	//
+	m, err := mmap.Open("/root/go/goRespository/test/mm.txt")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	buffer, err := m.Read()
+	if err != nil {
+		return
+	}
+	fmt.Println(string(buffer))
+
+	m.Write([]byte("hello world"))
+}
+func main() {
+	mmapTest()
 }
